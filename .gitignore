@@ -1,16 +1,15 @@
-# Node
 node_modules
 /apps/api/node_modules
 pnpm-lock.yaml
 
-# Build
 dist
 build
 
-# Env
 /apps/api/.env
 /apps/api/.env.*
 
-# Prisma
 /apps/api/prisma/dev.db
 /apps/api/prisma/dev.db-journal
+
+.DS_Store
+/apps/api/.DS_Store
