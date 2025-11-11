@@ -1,0 +1,19 @@
+{
+  "name": "political-discourse-dashboard-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -r \"pnpm -C apps/api dev\" \"pnpm -C apps/web dev\"",
+    "lint": "eslint .",
+    "typecheck": "tsc -v"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1",
+    "eslint": "^9.13.0",
+    "typescript": "^5.6.3"
+  }
+}

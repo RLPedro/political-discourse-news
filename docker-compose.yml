@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pdd
+      POSTGRES_PASSWORD: pdd
+      POSTGRES_DB: pdd
+    ports:
+      - "5432:5432"
+    volumes:
+      - pdd_data:/var/lib/postgresql/data
+volumes:
+  pdd_data:
