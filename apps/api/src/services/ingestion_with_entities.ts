@@ -32,10 +32,6 @@ function countryQueryPart(country?: 'SE' | 'PT') {
   return '(Sweden OR Swedish OR Stockholm OR Gothenburg OR Göteborg OR Malmö OR Malmo)';
 }
 
-/**
- * Ingest recent articles from NewsAPI, do sentiment + entity extraction,
- * store to DB, and emit SSE events.
- */
 export async function ingestFromNewsAPIWithEntities(opts: IngestOptions) {
   const {
     term,

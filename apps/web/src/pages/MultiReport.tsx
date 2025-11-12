@@ -174,13 +174,11 @@ export default function MultiReport() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Chart card */}
         <div className="card lg:col-span-3 space-y-4">
           <div className="flex items-center justify-between">
             <h4 className="text-lg font-semibold">Sentiment over time</h4>
           </div>
 
-          {/* Inline legend */}
           <div className="flex items-center gap-4">
             {topics.map((name, i) => (
               <div key={name} className="flex items-center gap-2">
@@ -230,7 +228,6 @@ export default function MultiReport() {
           </p>
         </div>
 
-        {/* Sources sidebar */}
         <div className="card space-y-3">
           <h3 className="text-lg font-semibold">Sources — {country === 'SE' ? 'Sweden' : 'Portugal'}</h3>
           <ul className="text-sm space-y-2 max-h-80 overflow-auto pr-2">
