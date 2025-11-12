@@ -29,7 +29,7 @@ const buildDateSpan = (days: number): string[] => {
 };
 
 const useQueryState = () => {
-  const [ver, setVer] = useState(0); // bump to react to back/forward
+  const [ver, setVer] = useState(0);
   useEffect(() => {
     const onPop = () => setVer(v => v + 1);
     window.addEventListener('popstate', onPop);

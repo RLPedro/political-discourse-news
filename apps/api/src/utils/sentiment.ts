@@ -1,9 +1,7 @@
-import winkSentiment from 'wink-sentiment';
+import { analyzeSentiment } from '../services/sentiment_ml.js';
 
-export const sentiment01 = (text: string): number => {
-  if (!text?.trim()) return 0.5;
-  const { score } = winkSentiment(text);
-  const x = Math.max(-10, Math.min(10, score));
-  const val = 1 / (1 + Math.exp(-x / 2));
-  return Number(val.toFixed(3));
+export const sentiment01 = async (text: string): Promise<number> => {
+  const v = await analyzeSentiment(text);
+  const n = Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0.5;
+  return Number(n.toFixed(3));
 }

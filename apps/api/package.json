@@ -11,24 +11,28 @@
     "prisma:generate": "prisma generate",
     "prisma:studio": "prisma studio",
     "prisma:seed": "tsx prisma/seed.ts",
-    "ingest": "tsx scripts/ingest.ts"
+    "ingest": "tsx src/scripts/ingest.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@pdd/types": "workspace:*",
     "@prisma/client": "^5.19.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "helmet": "^7.1.0",
     "morgan": "^1.10.0",
-    "wink-sentiment": "^5.0.2",
-    "zod": "^3.23.8",
-    "node-cron": "^3.0.3"
+    "node-cron": "^3.0.3",
+    "node-fetch": "^3.3.2",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.5",
+    "@types/morgan": "^1.9.10",
+    "@types/node": "^24.10.1",
+    "@types/node-cron": "^3.0.11",
     "prisma": "^5.19.1",
     "tsx": "^4.19.1",
     "typescript": "^5.6.3"

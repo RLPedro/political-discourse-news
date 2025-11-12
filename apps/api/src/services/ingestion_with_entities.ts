@@ -106,7 +106,15 @@ export const ingestFromNewsAPIWithEntities = async (opts: IngestOptions) => {
         },
       });
 
-      const s = sentiment01([a.title, a.description].filter(Boolean).join(' — '));
+      const s = await sentiment01([a.title, a.description].filter(Boolean).join(' — '));
+      await prisma.analysis.create({
+        data: {
+          articleId: article.id,
+          sentiment: s,
+          topics: [term.toLowerCase()],
+          entities: {},
+        },
+      });
 
       const analysis = await prisma.analysis.create({
         data: {
