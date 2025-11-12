@@ -15,11 +15,10 @@ import { startScheduler } from './scheduler.js'
 
 const app = express();
 const prisma = new PrismaClient();
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 4000;
+const port = Number(process.env.PORT ?? 4000);
 
 app.use(helmet());
 
-// app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
 app.use(cors({ origin: [/\.vercel\.app$/, 'http://localhost:5173'] }));
 
 app.use(express.json({ limit: '1mb' }));
@@ -39,6 +38,4 @@ app.use('/stream', streamRouter);
 
 startScheduler();
 
-app.listen(PORT, () => {
-  console.log(`API listening on http://localhost:${PORT}`);
-});
+app.listen(port, '0.0.0.0', () => console.log(`API on ${port}`));
