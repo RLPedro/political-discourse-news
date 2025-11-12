@@ -41,7 +41,11 @@ INGEST_COUNTRIES=SE,PT
 INGEST_DAYS=2
 INGEST_PAGE_SIZE=50
 NEWSAPI_MAX_PAGES=2
+```
 
+---
+
+## 🧹 Development Commands
 
 | Command                          | Description                             |
 | -------------------------------- | --------------------------------------- |
