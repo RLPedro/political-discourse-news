@@ -9,7 +9,7 @@ import articlesRouter from './routes/articles.js';
 import insightsRouter from './routes/insights.js';
 import insightsMultiRouter from './routes/insights_multi.js';
 import { ingestRouter } from './routes/ingest.js';
-import entitiesRouter from './routes/entities.js'
+import { entitiesRouter } from './routes/entities.js';
 import streamRouter from './routes/stream.js'
 import { startScheduler } from './scheduler.js'
 
@@ -33,7 +33,7 @@ app.use('/articles', articlesRouter);
 app.use('/insights', insightsRouter);
 app.use('/insights', insightsMultiRouter);
 app.use('/ingest', ingestRouter);
-app.use('/insights/entities', entitiesRouter);
+app.use('/entities', entitiesRouter);
 app.use('/stream', streamRouter);
 
 startScheduler();

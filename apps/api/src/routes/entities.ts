@@ -1,31 +1,50 @@
-import { Router } from 'express'
-import { PrismaClient } from '@prisma/client'
+import { Router, Request, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient()
-const router = Router()
+const prisma = new PrismaClient();
+export const entitiesRouter = Router();
 
-router.get('/', async (req, res) => {
-  const term = (req.query.term as string | undefined)?.toLowerCase() ?? ''
-  const limit = Number(req.query.limit ?? 10)
+type EntityAgg = {
+  id: number;
+  name: string;
+  type: string;
+  mentions: number;
+};
 
-  const analyses = await prisma.analysis.findMany({
-    where: term ? { Article: { title: { contains: term, mode: 'insensitive' } } } : {},
-    select: { id: true },
-  })
-  const analysisIds = analyses.map(a => a.id)
-  if (analysisIds.length === 0) return res.json({ term, items: [] })
+entitiesRouter.get('/', async (req: Request, res: Response) => {
+  try {
+    const countryQ = (req.query.country as string | undefined)?.toUpperCase();
+    const take = Math.min(Math.max(Number(req.query.take ?? 100), 1), 500);
 
-  const items = await prisma.$queryRawUnsafe<any[]>(`
-    SELECT e.name, e.type, COUNT(*) as occurrences
-    FROM "EntityOccurrence" eo
-    JOIN "Entity" e ON e.id = eo."entityId"
-    WHERE eo."analysisId" = ANY($1)
-    GROUP BY e.name, e.type
-    ORDER BY occurrences DESC
-    LIMIT $2
-  `, analysisIds, limit)
+    const grouped = await prisma.entityOccurrence.groupBy({
+      by: ['entityId'],
+      where: countryQ
+        ? { Analysis: { Article: { country: countryQ } } }
+        : undefined,
+      _sum: { count: true },
+      orderBy: { _sum: { count: 'desc' } },
+      take,
+    });
 
-  res.json({ term, items })
-})
+    const ids = grouped.map((g) => g.entityId);
+    const entities = await prisma.entity.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, name: true, type: true },
+    });
+    const emap = new Map(entities.map((e) => [e.id, e]));
 
-export default router
+    const payload: EntityAgg[] = grouped.map((g) => {
+      const meta = emap.get(g.entityId);
+      return {
+        id: g.entityId,
+        name: meta?.name ?? '(unknown)',
+        type: meta?.type ?? '',
+        mentions: g._sum.count ?? 0,
+      };
+    });
+
+    res.json(payload);
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
