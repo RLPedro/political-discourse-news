@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 export const entitiesRouter = Router();
@@ -17,25 +17,43 @@ entitiesRouter.get('/', async (req: Request, res: Response) => {
     const takeParam = Number(req.query.take ?? 100);
     const take = Math.min(Math.max(Number.isFinite(takeParam) ? takeParam : 100, 1), 500);
 
-    const rows = await prisma.$queryRaw<EntityAgg[]>`
-      SELECT
-        e.id::int           AS id,
-        e.name              AS name,
-        e.type              AS type,
-        COALESCE(SUM(eo.count), 0)::int AS mentions
-      FROM "EntityOccurrence" AS eo
-      JOIN "Entity"   AS e  ON e.id  = eo."entityId"
-      JOIN "Analysis" AS an ON an.id = eo."analysisId"
-      JOIN "Article"  AS ar ON ar.id = an."articleId"
-      ${countryQ ? Prisma.sql`WHERE ar.country = ${countryQ}` : Prisma.empty}
-      GROUP BY e.id, e.name, e.type
-      ORDER BY mentions DESC
-      LIMIT ${take}
-    `;
+    let rows: EntityAgg[];
+
+    if (countryQ) {
+      rows = await prisma.$queryRaw<EntityAgg[]>`
+        SELECT
+          e.id::int                         AS id,
+          e.name                            AS name,
+          e.type                            AS type,
+          COALESCE(SUM(eo.count), 0)::int   AS mentions
+        FROM "EntityOccurrence" AS eo
+        JOIN "Entity"   AS e  ON e.id  = eo."entityId"
+        JOIN "Analysis" AS an ON an.id = eo."analysisId"
+        JOIN "Article"  AS ar ON ar.id = an."articleId"
+        WHERE ar.country = ${countryQ}
+        GROUP BY e.id, e.name, e.type
+        ORDER BY mentions DESC
+        LIMIT ${take}
+      `;
+    } else {
+      rows = await prisma.$queryRaw<EntityAgg[]>`
+        SELECT
+          e.id::int                         AS id,
+          e.name                            AS name,
+          e.type                            AS type,
+          COALESCE(SUM(eo.count), 0)::int   AS mentions
+        FROM "EntityOccurrence" AS eo
+        JOIN "Entity"   AS e  ON e.id  = eo."entityId"
+        JOIN "Analysis" AS an ON an.id = eo."analysisId"
+        JOIN "Article"  AS ar ON ar.id = an."articleId"
+        GROUP BY e.id, e.name, e.type
+        ORDER BY mentions DESC
+        LIMIT ${take}
+      `;
+    }
 
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: (err as Error).message });
   }
 });
-
