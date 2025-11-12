@@ -12,11 +12,19 @@ body {
   @apply max-w-6xl mx-auto px-4;
 }
 .card {
-  @apply bg-white dark:bg-gray-900 rounded-2xl shadow p-6;
+  /* @apply bg-white dark:bg-gray-900 rounded-2xl shadow p-6; */
+  /* @apply bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6; */
+  @apply bg-white dark:bg-gray-600 rounded-2xl shadow-lg p-6; 
 }
 .btn {
   @apply inline-flex items-center rounded-xl px-4 py-2 font-medium bg-gray-900 text-white dark:bg-white dark:text-gray-900 hover:opacity-90 transition;
 }
 .input {
   @apply w-full rounded-xl border px-3 py-2 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700;
+}
+.recharts-cartesian-axis .recharts-cartesian-axis-tick text {
+  fill: #111827;
+}
+.dark .recharts-cartesian-axis .recharts-cartesian-axis-tick text {
+  fill: #e5e7eb;
 }
