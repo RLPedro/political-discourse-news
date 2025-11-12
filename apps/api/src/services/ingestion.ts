@@ -71,7 +71,6 @@ export async function ingestFromNewsAPI(opts: IngestOptions) {
       },
     });
 
-    // Compute sentiment from title + description
     const basis = [a.title, a.description].filter(Boolean).join(' — ');
     const s = sentiment01(basis);
 

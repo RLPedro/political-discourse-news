@@ -4,7 +4,6 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 const router = Router();
 
-// GET /articles?term=climate
 router.get('/', async (req, res) => {
   const term = (req.query.term as string | undefined)?.toLowerCase() ?? '';
   const where = term

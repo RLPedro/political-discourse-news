@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"     // ⬅ change from "sqlite"
+  provider = "postgresql" // ⬅ change from "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -22,15 +22,45 @@ model Article {
   publishedAt DateTime
   author      String?
   rawText     String?
+  country     String?
   analyses    Analysis[]
+
+  @@index([publishedAt])
+  @@index([title])
+  @@index([source])
+  @@index([country])
 }
 
 model Analysis {
+  id          Int                @id @default(autoincrement())
+  articleId   Int
+  sentiment   Float
+  topics      String[]
+  entities    Json?
+  Article     Article            @relation(fields: [articleId], references: [id])
+  createdAt   DateTime           @default(now())
+  occurrences EntityOccurrence[]
+}
+
+model Entity {
+  id          Int                @id @default(autoincrement())
+  name        String             @unique
+  type        String
+  occurrences EntityOccurrence[]
+  createdAt   DateTime           @default(now())
+
+  @@index([type])
+}
+
+model EntityOccurrence {
   id         Int      @id @default(autoincrement())
-  articleId  Int
-  sentiment  Float
-  topics     String[]
-  entities   Json?
-  Article    Article @relation(fields: [articleId], references: [id])
+  entityId   Int
+  analysisId Int
+  count      Int      @default(1)
   createdAt  DateTime @default(now())
+  Entity     Entity   @relation(fields: [entityId], references: [id])
+  Analysis   Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([entityId])
+  @@index([analysisId])
 }

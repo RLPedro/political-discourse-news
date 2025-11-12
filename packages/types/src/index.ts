@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const SentimentPoint = z.object({
-  date: z.string(), // ISO date (day)
+  date: z.string(),
   avgSentiment: z.number()
 });
 export const SentimentSeries = z.object({
