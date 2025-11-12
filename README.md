@@ -1,3 +1,5 @@
+![Screenshot](./screenshot.png)
+
 # 📰 Political Discourse Dashboard
 
 A full-stack TypeScript application that analyzes and visualizes **news sentiment** across sustainability, economy, policy, and safety topics — focused on **Sweden** and **Portugal**.
