@@ -11,37 +11,62 @@ type EntityAgg = {
   mentions: number;
 };
 
+type EntityMeta = {
+  id: number;
+  name: string;
+  type: string;
+};
+
 entitiesRouter.get('/', async (req: Request, res: Response) => {
   try {
     const countryQ = (req.query.country as string | undefined)?.toUpperCase();
-    const take = Math.min(Math.max(Number(req.query.take ?? 100), 1), 500);
+    const takeParam = Number(req.query.take ?? 100);
+    const take = Math.min(Math.max(takeParam, 1), 500);
 
     const grouped = await prisma.entityOccurrence.groupBy({
       by: ['entityId'],
       where: countryQ
-        ? { Analysis: { Article: { country: countryQ } } }
+        ? {
+            Analysis: {
+              is: {
+                Article: {
+                  is: { country: countryQ },
+                },
+              },
+            },
+          }
         : undefined,
       _sum: { count: true },
       orderBy: { _sum: { count: 'desc' } },
       take,
     });
 
-    const ids = grouped.map((g) => g.entityId);
-    const entities = await prisma.entity.findMany({
+    const ids: number[] = grouped.map((g: { entityId: number }) => g.entityId);
+    const rows = await prisma.entity.findMany({
       where: { id: { in: ids } },
       select: { id: true, name: true, type: true },
     });
-    const emap = new Map(entities.map((e) => [e.id, e]));
 
-    const payload: EntityAgg[] = grouped.map((g) => {
-      const meta = emap.get(g.entityId);
-      return {
-        id: g.entityId,
-        name: meta?.name ?? '(unknown)',
-        type: meta?.type ?? '',
-        mentions: g._sum.count ?? 0,
-      };
-    });
+    const metas: EntityMeta[] = rows.map((e): EntityMeta => ({
+      id: e.id,
+      name: e.name,
+      type: e.type,
+    }));
+    const emap: Map<number, EntityMeta> = new Map(
+      metas.map((m: EntityMeta) => [m.id, m] as const)
+    );
+
+    const payload: EntityAgg[] = grouped.map(
+      (g: { entityId: number; _sum: { count: number | null } }): EntityAgg => {
+        const meta: EntityMeta | undefined = emap.get(g.entityId);
+        return {
+          id: g.entityId,
+          name: meta?.name ?? '(unknown)',
+          type: meta?.type ?? '',
+          mentions: g._sum.count ?? 0,
+        };
+      }
+    );
 
     res.json(payload);
   } catch (err) {
