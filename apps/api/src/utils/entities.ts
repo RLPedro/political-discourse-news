@@ -14,7 +14,7 @@ const GEO_TERMS = [
 
 const CAPS_PHRASE = /\b([A-ZÅÄÖ][\p{L}’'-]+(?:\s+[A-ZÅÄÖ][\p{L}’'-]+){0,3})\b/gu
 
-export function extractEntities(text: string, limit = 25): ExtractedEntity[] {
+export const extractEntities = (text: string, limit = 25): ExtractedEntity[] => {
   if (!text?.trim()) return []
   const set = new Map<string, ExtractedEntity>()
 

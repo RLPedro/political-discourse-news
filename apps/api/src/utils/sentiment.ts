@@ -1,6 +1,6 @@
 import winkSentiment from 'wink-sentiment';
 
-export function sentiment01(text: string): number {
+export const sentiment01 = (text: string): number => {
   if (!text?.trim()) return 0.5;
   const { score } = winkSentiment(text);
   const x = Math.max(-10, Math.min(10, score));

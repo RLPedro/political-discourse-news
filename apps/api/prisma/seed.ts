@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
-async function main() {
+const main = async () => {
   const articles = [
     { source: 'Example News', title: 'Climate policy gains momentum', url: 'https://example.com/a1', publishedAt: new Date('2025-10-10'), author: 'A. Smith' },
     { source: 'Global Times', title: 'Economy and climate talks stall', url: 'https://example.com/a2', publishedAt: new Date('2025-10-11'), author: 'B. Jones' },

@@ -27,7 +27,7 @@ router.get('/sentiment-multi', async (req, res) => {
   const days = m ? Math.max(1, parseInt(m[1], 10)) : 7;
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-  async function seriesFor(term: string) {
+  const seriesFor = async (term: string) => {
     const articles = await prisma.article.findMany({
       where: {
         publishedAt: { gte: since },

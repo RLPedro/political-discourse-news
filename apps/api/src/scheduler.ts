@@ -7,7 +7,7 @@ const DOMAINS = process.env.INGEST_DOMAINS || '';
 const DAYS = Number(process.env.INGEST_DAYS || 2)
 const PAGE = Number(process.env.INGEST_PAGE_SIZE || 20)
 
-export function startScheduler() {
+export const startScheduler = () => {
   cron.schedule('5 * * * *', async () => {
     console.log('[scheduler] starting hourly ingestion run...')
     for (const term of TERMS) {

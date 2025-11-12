@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -12,15 +11,12 @@ type Series = { term: string; points: Pt[] };
 type MultiResponse = { range: string; series: Series[] };
 type SourceAgg = { source: string; count: number };
 
-// -------- range helpers (cap to 4 weeks) --------
 const clampDays = (d: number) => Math.min(Math.max(1, d), 28);
 const daysFromRange = (r: string): number => {
   const m = /^(\d+)\s*d$/i.exec(r);
   return clampDays(m ? parseInt(m[1], 10) : 7);
 };
 const rangeOptions = [1,2,3,4].map(w => ({ value: `${w*7}d`, label: `${w} w` }));
-
-// Build ISO yyyy-mm-dd list for last N days (today included)
 const buildDateSpan = (days: number): string[] => {
   const out: string[] = [];
   const now = new Date();
@@ -32,86 +28,80 @@ const buildDateSpan = (days: number): string[] => {
   return out;
 };
 
-export default function MultiReport() {
-  const [sp, setSp] = useSearchParams();
+const useQueryState = () => {
+  const [ver, setVer] = useState(0); // bump to react to back/forward
+  useEffect(() => {
+    const onPop = () => setVer(v => v + 1);
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+  const sp = useMemo(() => new URLSearchParams(window.location.search), [ver]);
+  const setSp = (next: URLSearchParams) => {
+    const qs = next.toString();
+    const url = qs ? `?${qs}` : window.location.pathname;
+    window.history.replaceState({}, '', url);
+    setVer(v => v + 1);
+  };
+  return [sp, setSp] as const;
+}
 
-  // URL params → topics/range/country
+const App = () => {
+  const [sp, setSp] = useQueryState();
+
   const topics = useMemo(() => {
     const q = sp.get('topics');
     const list = q ? q.split(',') : defaultTopics;
     return Array.from(new Set(list.map(s => s.trim().toLowerCase()).filter(Boolean)));
-  }, [sp]);
+  }, [sp.toString()]);
 
   const rawRange = sp.get('range') ?? '7d';
   const rangeDays = daysFromRange(rawRange);
   const range = `${rangeDays}d`;
-
   const country = (sp.get('country') as 'SE'|'PT') ?? 'SE';
 
-  // data
   const [data, setData] = useState<MultiResponse | null>(null);
   const [sources, setSources] = useState<SourceAgg[]>([]);
 
-  // "last updated" badge
   const lastUpdateRef = useRef<Date | null>(null);
   const [lastUpdatedText, setLastUpdatedText] = useState('');
-  const setNow = () => {
-    lastUpdateRef.current = new Date();
-    setLastUpdatedText(lastUpdateRef.current.toLocaleTimeString());
-  };
+  const setNow = () => { lastUpdateRef.current = new Date(); setLastUpdatedText(lastUpdateRef.current.toLocaleTimeString()); };
 
-  // Fetch multi-series (chart)
   useEffect(() => {
-    axios.get(`${API_BASE}/insights/sentiment-multi`, {
-      params: { terms: topics.join(','), range, country },
-    })
-    .then(r => setData(r.data))
-    .catch(console.error);
+    axios.get(`${API_BASE}/insights/sentiment-multi`, { params: { terms: topics.join(','), range, country } })
+      .then(r => setData(r.data))
+      .catch(console.error);
   }, [topics.join(','), range, country]);
 
   useEffect(() => { setNow(); }, [data]);
 
-  // Live refresh via SSE (optional)
   useEffect(() => {
     const es = new EventSource('http://localhost:4000/stream/ingestion');
     const onEvt = () => {
-      axios.get(`${API_BASE}/insights/sentiment-multi`, {
-        params: { terms: topics.join(','), range, country },
-      })
-      .then(r => { setData(r.data); setNow(); })
-      .catch(console.error);
+      axios.get(`${API_BASE}/insights/sentiment-multi`, { params: { terms: topics.join(','), range, country } })
+        .then(r => { setData(r.data); setNow(); })
+        .catch(console.error);
     };
     es.addEventListener('ANALYSIS_CREATED', onEvt);
-    return () => { es.close(); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => es.close();
   }, [topics.join(','), range, country]);
 
-  // Aggregate sources for sidebar
   useEffect(() => {
     Promise.all(
       topics.map(t =>
         axios.get(`${API_BASE}/insights/sentiment`, { params: { term: t, range, country } })
           .then(r => r.data.points as { date: string; sources?: { source: string; count: number }[] }[])
       )
-    )
-    .then(all => {
+    ).then(all => {
       const tally = new Map<string, number>();
       for (const termPoints of all) {
-        for (const p of termPoints) {
-          for (const s of p.sources ?? []) {
-            tally.set(s.source, (tally.get(s.source) ?? 0) + s.count);
-          }
+        for (const p of termPoints) for (const s of p.sources ?? []) {
+          tally.set(s.source, (tally.get(s.source) ?? 0) + s.count);
         }
       }
-      const agg = Array.from(tally.entries())
-        .map(([source, count]) => ({ source, count }))
-        .sort((a,b) => b.count - a.count);
-      setSources(agg);
-    })
-    .catch(console.error);
+      setSources(Array.from(tally, ([source, count]) => ({ source, count })).sort((a,b)=>b.count-a.count));
+    }).catch(console.error);
   }, [topics.join(','), range, country]);
 
-  // Build complete date axis for the selected span; fill gaps with null
   const chartData = useMemo(() => {
     const dates = buildDateSpan(rangeDays);
     const byTerm = new Map<string, Map<string, number>>();
@@ -127,20 +117,18 @@ export default function MultiReport() {
     });
   }, [data, topics, rangeDays]);
 
-  // mark empty topics (no points at all)
   const empty = new Set((data?.series ?? []).filter(s => s.points.length === 0).map(s => s.term));
 
-  // URL setters (clone params so router re-renders)
-  const setRange = (next: string) => {
+  const setRangeParam = (next: string) => {
     const nextSp = new URLSearchParams(sp);
     const nd = daysFromRange(next);
     nextSp.set('range', `${nd}d`);
-    setSp(nextSp, { replace: true });
+    setSp(nextSp);
   };
-  const setCountry = (next: 'SE'|'PT') => {
+  const setCountryParam = (next: 'SE'|'PT') => {
     const nextSp = new URLSearchParams(sp);
     nextSp.set('country', next);
-    setSp(nextSp, { replace: true });
+    setSp(nextSp);
   };
 
   return (
@@ -150,14 +138,8 @@ export default function MultiReport() {
           <h1 className="text-2xl font-bold">Analysis on publicly available news</h1>
           <div className="flex items-center gap-3">
             <label className="text-sm text-gray-600 dark:text-gray-300">Range</label>
-            <select
-              className="input !w-auto"
-              value={range}
-              onChange={(e) => setRange(e.target.value)}
-            >
-              {rangeOptions.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
+            <select className="input !w-auto" value={range} onChange={(e) => setRangeParam(e.target.value)}>
+              {rangeOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
             </select>
           </div>
         </div>
@@ -165,11 +147,9 @@ export default function MultiReport() {
           <span className="rounded-full px-3 py-1 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200">
             Auto-updating hourly
           </span>
-          {lastUpdatedText && (
-            <span className="text-xs text-gray-500">Updated {lastUpdatedText}</span>
-          )}
-          <button onClick={() => setCountry('SE')} className={`btn ${country==='SE' ? '' : 'opacity-70'}`}>Sweden</button>
-          <button onClick={() => setCountry('PT')} className={`btn ${country==='PT' ? '' : 'opacity-70'}`}>Portugal</button>
+          {lastUpdatedText && <span className="text-xs text-gray-500">Updated {lastUpdatedText}</span>}
+          <button onClick={() => setCountryParam('SE')} className={`btn ${ (sp.get('country') ?? 'SE') === 'SE' ? '' : 'opacity-70'}`}>Sweden</button>
+          <button onClick={() => setCountryParam('PT')} className={`btn ${ (sp.get('country') ?? 'SE') === 'PT' ? '' : 'opacity-70'}`}>Portugal</button>
         </div>
       </div>
 
@@ -182,10 +162,7 @@ export default function MultiReport() {
           <div className="flex items-center gap-4">
             {topics.map((name, i) => (
               <div key={name} className="flex items-center gap-2">
-                <span
-                  className="inline-block w-3 h-3 rounded-full"
-                  style={{ background: COLORS[i % COLORS.length], opacity: empty.has(name) ? 0.3 : 1 }}
-                />
+                <span className="inline-block w-3 h-3 rounded-full" style={{ background: COLORS[i % COLORS.length], opacity: empty.has(name) ? 0.3 : 1 }} />
                 <span className="text-sm">
                   {name}{empty.has(name) && <span className="ml-1 text-xs text-gray-500">(no data)</span>}
                 </span>
@@ -205,7 +182,6 @@ export default function MultiReport() {
                   itemStyle={{ color: '#111827' }}
                   formatter={(value: any, name: string) => [Number(value).toFixed(3), name]}
                 />
-
                 {topics.map((name, i) => (
                   <Line
                     key={name}
@@ -223,15 +199,13 @@ export default function MultiReport() {
             </ResponsiveContainer>
           </div>
 
-          <p className="text-sm text-gray-500">
-            Overlay shows daily average sentiment for each topic.
-          </p>
+          <p className="text-sm text-gray-500">Overlay shows daily average sentiment for each topic.</p>
         </div>
 
         <div className="card space-y-3">
-          <h3 className="text-lg font-semibold">Sources — {country === 'SE' ? 'Sweden' : 'Portugal'}</h3>
+          <h3 className="text-lg font-semibold">Sources — {(sp.get('country') ?? 'SE') === 'SE' ? 'Sweden' : 'Portugal'}</h3>
           <ul className="text-sm space-y-2 max-h-80 overflow-auto pr-2">
-            {sources.slice(0, 50).map((s) => (
+            {sources.slice(0, 50).map(s => (
               <li key={s.source} className="flex justify-between gap-3">
                 <span className="truncate">{s.source}</span>
                 <span className="tabular-nums text-gray-500">{s.count}</span>
@@ -244,3 +218,5 @@ export default function MultiReport() {
     </div>
   );
 }
+
+export default App;

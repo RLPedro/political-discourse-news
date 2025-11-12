@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { z } from 'zod';
-// import { ingestFromNewsAPI } from '../services/ingestion.js';
 import { ingestFromNewsAPIWithEntities } from '../services/ingestion_with_entities.js';
 
 const router = Router();
@@ -16,7 +15,6 @@ router.post('/fetch', async (req, res) => {
 
   try {
     const args = schema.parse(req.body ?? {});
-    // const result = await ingestFromNewsAPI(args);
     const result = await ingestFromNewsAPIWithEntities(args);
     res.json({ ok: true, ...result });
   } catch (err: any) {

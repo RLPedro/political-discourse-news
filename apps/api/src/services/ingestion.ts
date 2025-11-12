@@ -20,7 +20,7 @@ type NewsArticle = {
   content?: string | null;
 };
 
-export async function ingestFromNewsAPI(opts: IngestOptions) {
+export const ingestFromNewsAPI = async (opts: IngestOptions) => {
   const { term, days = 3, pageSize = 20 } = opts;
   if (!process.env.NEWSAPI_KEY) {
     throw new Error('Missing NEWSAPI_KEY in environment');

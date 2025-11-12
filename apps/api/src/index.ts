@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import type { Request, Response } from 'express';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -21,7 +22,7 @@ app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
 app.use(express.json({ limit: '1mb' }));
 app.use(morgan('dev'));
 
-app.get('/health', async (_req, res) => {
+app.get('/health', async (_req: Request, res: Response) => {
   await prisma.$queryRaw`SELECT 1`;
   res.json({ ok: true });
 });

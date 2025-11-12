@@ -1,4 +1,3 @@
-// apps/api/src/services/ingestion_with_entities.ts
 import { PrismaClient } from '@prisma/client';
 import { sentiment01 } from '../utils/sentiment.js';
 import { extractEntities } from '../utils/entities.js';
@@ -25,14 +24,14 @@ type NewsArticle = {
   content?: string | null;
 };
 
-function countryQueryPart(country?: 'SE' | 'PT') {
+const countryQueryPart = (country?: 'SE' | 'PT') => {
   if (country === 'PT') {
     return '(Portugal OR Portuguese OR Lisbon OR Lisboa OR Porto)';
   }
   return '(Sweden OR Swedish OR Stockholm OR Gothenburg OR Göteborg OR Malmö OR Malmo)';
 }
 
-export async function ingestFromNewsAPIWithEntities(opts: IngestOptions) {
+export const ingestFromNewsAPIWithEntities = async (opts: IngestOptions) => {
   const {
     term,
     days = 7,
@@ -54,7 +53,7 @@ export async function ingestFromNewsAPIWithEntities(opts: IngestOptions) {
     from: fromISO,
     apiKey: process.env.NEWSAPI_KEY!,
   });
-  // only set if provided (keeps query broader otherwise)
+
   if (domainsCsv && domainsCsv.trim()) baseParams.set('domains', domainsCsv.trim());
 
   const MAX_PAGES = Number(process.env.NEWSAPI_MAX_PAGES || 3);
@@ -86,7 +85,6 @@ export async function ingestFromNewsAPIWithEntities(opts: IngestOptions) {
       const publishedAt = a.publishedAt ? new Date(a.publishedAt) : new Date();
       const content = a.content || a.description || '';
 
-      // Upsert article
       const article = await prisma.article.upsert({
         where: { url: a.url },
         create: {
@@ -108,20 +106,17 @@ export async function ingestFromNewsAPIWithEntities(opts: IngestOptions) {
         },
       });
 
-      // Sentiment
       const s = sentiment01([a.title, a.description].filter(Boolean).join(' — '));
 
-      // Analysis row
       const analysis = await prisma.analysis.create({
         data: {
           articleId: article.id,
           sentiment: s,
           topics: [term.toLowerCase()],
-          entities: {}, // kept for compatibility
+          entities: {},
         },
       });
 
-      // Entities (dependency-free heuristic)
       const ents = extractEntities([a.title, content].filter(Boolean).join(' '), 25);
       for (const ent of ents) {
         const entity = await prisma.entity.upsert({
@@ -138,7 +133,6 @@ export async function ingestFromNewsAPIWithEntities(opts: IngestOptions) {
         });
       }
 
-      // SSE event
       bus.emit('event', {
         type: 'ANALYSIS_CREATED',
         payload: {
