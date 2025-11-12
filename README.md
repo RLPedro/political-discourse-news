@@ -1,6 +1,8 @@
 ![Screenshot](./screenshot.png)
 
 # 📰 Political Discourse Dashboard
+> Full-stack sentiment dashboard built with React, Express, Prisma, and Hugging Face.
+> 
 
 A full-stack TypeScript application that analyzes and visualizes **news sentiment** across sustainability, economy, policy, and safety topics — focused on **Sweden** and **Portugal**.
 
@@ -27,7 +29,7 @@ The app fetches real-world news from [NewsAPI.org](https://newsapi.org), analyze
 ### 1️⃣ Requirements
 - Node.js ≥ 18
 - PostgreSQL running locally (or remote URL)
-- [NewsAPI.org](https://newsapi.org) API key
+- [NewsAPI.org](https://newsapi.org) API key (free)
 - [Hugging Face](https://huggingface.co/settings/tokens) API token (free)
 
 ### 2️⃣ Environment variables
