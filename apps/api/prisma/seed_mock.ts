@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-async function main() {
+const main = async () => {
   console.log("🌱 Seeding mock data...");
 
   // Clear existing (optional, comment out if you want to keep data)

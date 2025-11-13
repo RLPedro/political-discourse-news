@@ -7,7 +7,7 @@ const router = Router();
 type Point = { date: string; avgSentiment: number };
 type Series = { term: string; points: Point[] };
 
-function parseRange(range?: string): { label: string; days: number } {
+const parseRange = (range?: string): { label: string; days: number } => {
   const r = range ?? "7d";
 
   if (r.endsWith("d")) {
@@ -28,7 +28,8 @@ function parseRange(range?: string): { label: string; days: number } {
   return { label: "7d", days: 7 };
 }
 
-router.get("/insights/sentiment-multi", async (req, res, next) => {
+router.get("/sentiment-multi", async (req, res, next) => {
+
   try {
     const termsParam = (req.query.terms as string | undefined) ?? "";
     const terms = (termsParam || "climate,economy,policy,safety")

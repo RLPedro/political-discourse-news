@@ -10,7 +10,7 @@ type Point = {
   sources: { source: string; count: number }[];
 };
 
-function parseRange(range?: string): { label: string; days: number } {
+const parseRange = (range?: string): { label: string; days: number } => {
   const r = range ?? "7d";
 
   if (r.endsWith("d")) {
@@ -31,7 +31,7 @@ function parseRange(range?: string): { label: string; days: number } {
   return { label: "7d", days: 7 };
 }
 
-router.get("/insights/sentiment", async (req, res, next) => {
+router.get("/sentiment", async (req, res, next) => {
   try {
     const term = ((req.query.term as string | undefined) ?? "climate")
       .trim()
