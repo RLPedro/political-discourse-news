@@ -1,84 +1,99 @@
-📸 **Screenshot**  
+Screenshot  
 ![Screenshot](./screenshot.png)
 
-# 🌍 Political Discourse Dashboard
+# Political Discourse Dashboard
 
-A full-stack, ML-powered dashboard that analyzes news sentiment across **Sweden** and **Portugal**.
+A full‑stack, ML‑powered dashboard that analyzes news sentiment across **Sweden** and **Portugal**.
 
-This project pulls real news articles, runs sentiment analysis using a Hugging Face model, stores insights in PostgreSQL, and visualizes trends in a clean React dashboard.
+This project pulls real news articles, runs sentiment analysis with a Hugging Face model, stores insights in PostgreSQL, and shows trends in a React dashboard.
 
-Built to demonstrate modern full-stack engineering, API design, cloud deployment, and real-world ML integration.
+Built to demonstrate modern full‑stack engineering, API design, cloud deployment, and real‑world ML integration.
 
----
-
-## 🚀 Live Demo  
-👉 [here](https://political-discourse-news-web.vercel.app/)
+## Live Demo
+https://political-discourse-news-web.vercel.app/
 
 - **Frontend**: Vercel  
-- **Backend API + Postgres database**: Railway
+- **Backend API**: Railway
 
----
-
-## ✨ What This Project Shows
-
-- Full-stack TypeScript (React, Express, Prisma)
-- Real ML integration using Hugging Face sentiment analysis
+## What This Project Shows
+- Full‑stack TypeScript (React, Express, Prisma)
+- Real ML integration with Hugging Face sentiment analysis
 - Automated data ingestion + scheduled jobs
 - Clean API design with Zod validation & Prisma ORM
-- Cloud deployment across Vercel (web) and Railway (API + DB)
-- Interactive data visualization with Recharts
-- Monorepo structure, pnpm workspaces, environment management
+- Cloud deployment (Vercel + Railway)
+- Interactive charts with Recharts
+- Monorepo with pnpm workspaces
 
-> This is the kind of system you would build in a real production setting: data ingestion, feature extraction, analysis, persistence, and presentation.
+> This is a production‑ready system: ingest → analyze → store → visualize.
 
----
-
-## 🧠 Features
+## Features
 
 ### ML Sentiment Analysis
-Uses the Hugging Face model `distilbert-base-uncased-finetuned-sst-2-english` to classify article sentiment and map it to a **0–1 score** for visualization.
+Uses `distilbert-base-uncased-finetuned-sst-2-english` → maps to **0–1 score**.
 
 ### Automated News Ingestion
-A cron job fetches articles **hourly**, analyzes them, and stores results.  
-If NewsAPI rate limits, the system falls back to **mock data**.
+Cron job runs **hourly**. Falls back to **mock data** on rate limits.
 
-### Multi-Topic Trend Visualization
-Tracks sentiment for topics like:
+### Multi‑Topic Trends
+Tracks:
 - Climate
 - Economy
 - Policy
 - Safety
 
-Across time ranges: **1–4 weeks**  
-Includes **country switching** (Sweden / Portugal)
+Time ranges: **1–4 weeks**  
+Switch between **Sweden / Portugal**
 
-### Modern Dashboard
+### Dashboard
 - Responsive UI
-- Smooth sentiment curves
-- Topic color legend
-- Source contribution list
-- Hourly auto-updating badge
+- Smooth curves
+- Color legend
+- Source list
+- Auto‑update badge
 
----
+## Tech Stack
 
-## 🛠 Tech Stack
-
-**Frontend**:  
+**Frontend**  
 React, TypeScript, Vite, TailwindCSS, Recharts
 
-**Backend**:  
-Node.js, Express, Prisma, PostgreSQL, Hugging Face API, node-cron
+**Backend**  
+Node.js, Express, Prisma, PostgreSQL, Hugging Face API, node‑cron
 
-**Infra**:  
+**Infra**  
 Vercel (web), Railway (API + DB), pnpm monorepo
 
----
-
-## 🔧 Environment Variables
+## Environment Variables
 
 ### API (`apps/api/.env`)
-```env
 DATABASE_URL=your_postgres_url
 HF_API_KEY=your_huggingface_key
 NEWSAPI_KEY=your_newsapi_key
 ENABLE_INGESTION=true
+text### Frontend (`apps/web/.env`)
+VITE_API_BASE="https://your-api.up.railway.app"
+text## Running Locally
+pnpm install
+pnpm dev
+textOptional mock data:
+cd apps/api
+pnpm tsx prisma/seed_mock.ts
+text## Deployment
+
+### Railway (API)
+- Deploy `apps/api`
+- Attach PostgreSQL
+- Add env vars
+- Runs:
+pnpm -C apps/api build
+pnpm -C apps/api start
+text### Vercel (Frontend)
+- Deploy `apps/web`
+- Set `VITE_API_BASE` to Railway URL
+
+## About This Project
+
+Demonstrates:
+- End‑to‑end system design
+- Real ML in production
+- Clean API & frontend engineering
+- Cloud‑native workflows
