@@ -12,7 +12,7 @@ Built to demonstrate modern full-stack engineering, API design, cloud deployment
 ---
 
 ## 🚀 Live Demo  
-👉 [https://political-discourse-news-web.vercel.app/](here)
+👉 [here](https://political-discourse-news-web.vercel.app/)
 
 - **Frontend**: Vercel  
 - **Backend API**: Railway
