@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
-const API_BASE = 'http://localhost:4000';
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
+
 const COLORS = ['#2563eb','#16a34a','#dc2626','#9333ea','#ca8a04','#0891b2'];
 const defaultTopics = ['climate','economy','policy','safety'];
 
