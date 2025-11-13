@@ -36,6 +36,8 @@ app.use('/ingest', ingestRouter);
 app.use('/entities', entitiesRouter);
 app.use('/stream', streamRouter);
 
-startScheduler();
+if (process.env.ENABLE_INGESTION === 'true') {
+  startScheduler();
+}
 
 app.listen(port, '0.0.0.0', () => console.log(`API on ${port}`));

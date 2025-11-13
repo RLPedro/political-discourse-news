@@ -8,25 +8,26 @@ type Point = { date: string; avgSentiment: number };
 type Series = { term: string; points: Point[] };
 
 const parseRange = (range?: string): { label: string; days: number } => {
-  const r = range ?? "7d";
+  const raw = (range ?? "7d").trim();
+  const m = /^(\d+)([dwm])$/.exec(raw);
 
-  if (r.endsWith("d")) {
-    const n = Number(r.slice(1, -1));
-    return { label: r, days: Number.isFinite(n) && n > 0 ? n : 7 };
+  if (!m) {
+    return { label: "7d", days: 7 };
   }
 
-  if (r.endsWith("w")) {
-    const n = Number(r.slice(0, -1));
-    return { label: r, days: (Number.isFinite(n) && n > 0 ? n : 1) * 7 };
+  const n = Number(m[1]);
+  if (!Number.isFinite(n) || n <= 0) {
+    return { label: "7d", days: 7 };
   }
 
-  if (r.endsWith("m")) {
-    const n = Number(r.slice(0, -1));
-    return { label: r, days: (Number.isFinite(n) && n > 0 ? n : 1) * 30 };
-  }
+  const unit = m[2];
+  if (unit === "d") return { label: raw, days: n };
+  if (unit === "w") return { label: raw, days: n * 7 };
+  if (unit === "m") return { label: raw, days: n * 30 };
 
   return { label: "7d", days: 7 };
 }
+
 
 router.get("/sentiment-multi", async (req, res, next) => {
 

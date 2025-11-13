@@ -2,162 +2,138 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+const TOPICS = ["climate", "economy", "policy", "safety"] as const;
+type Topic = (typeof TOPICS)[number];
+
+const COUNTRIES = ["SE", "PT"] as const;
+type Country = (typeof COUNTRIES)[number];
+
+const BASE_SENTIMENT: Record<Topic, number> = {
+  climate: 0.65,
+  economy: 0.5,
+  policy: 0.45,
+  safety: 0.55,
+};
+
+const SOURCES: Record<Country, string[]> = {
+  SE: ["SVT.se", "DN.se", "Aftonbladet.se", "Sveriges Radio"],
+  PT: ["Publico.pt", "Observador.pt", "JN.pt", "Expresso.pt"],
+};
+
+const ENTITIES = [
+  { name: "Government", type: "organization" },
+  { name: "Economy", type: "topic" },
+  { name: "Environment", type: "topic" },
+  { name: "Security", type: "topic" },
+];
+
+const TOPIC_ENTITY: Record<Topic, string> = {
+  climate: "Environment",
+  economy: "Economy",
+  policy: "Government",
+  safety: "Security",
+};
+
+const clamp = (x: number, min: number, max: number): number => {
+  return Math.min(max, Math.max(min, x));
+}
+
+const randomSentiment = (topic: Topic): number => {
+  const base = BASE_SENTIMENT[topic];
+  const noise = (Math.random() - 0.5) * 0.2; // ±0.1
+  const val = clamp(base + noise, 0.15, 0.9);
+  return Number(val.toFixed(3));
+}
+
 const main = async () => {
-  console.log("🌱 Seeding mock data...");
+  console.log("🌱 Seeding expanded mock data...");
 
-  // Clear existing (optional, comment out if you want to keep data)
-//   await prisma.entityOccurrence.deleteMany();
-//   await prisma.analysis.deleteMany();
-//   await prisma.article.deleteMany();
-//   await prisma.entity.deleteMany();
-
-  // Predefined entities
-  const entities = [
-    { name: "Government", type: "organization" },
-    { name: "Economy", type: "topic" },
-    { name: "Environment", type: "topic" },
-    { name: "Security", type: "topic" }
-  ];
+  await prisma.entityOccurrence.deleteMany();
+  await prisma.analysis.deleteMany();
+  await prisma.article.deleteMany();
+  await prisma.entity.deleteMany();
 
   const entityRecords = await Promise.all(
-    entities.map((e) => prisma.entity.create({ data: e }))
+    ENTITIES.map((e) => prisma.entity.create({ data: e }))
   );
 
-  const baseArticles = [
-    // 🇵🇹 Portugal articles
-    {
-      country: "PT",
-      source: "Publico.pt",
-      title: "Portugal debates new climate policy",
-      url: "https://publico.pt/climate-policy",
-      publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1),
-      rawText: "Portugal announces new climate legislation...",
-      topics: ["climate"],
-      sentiment: 0.22,
-      entities: ["Environment"]
-    },
-    {
-      country: "PT",
-      source: "Observador.pt",
-      title: "Economic growth slows down",
-      url: "https://observador.pt/economy-slowdown",
-      publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
-      rawText: "The national bank reports slower GDP growth...",
-      topics: ["economy"],
-      sentiment: -0.12,
-      entities: ["Economy"]
-    },
-    {
-      country: "PT",
-      source: "JN.pt",
-      title: "Crime rates fall in major cities",
-      url: "https://jn.pt/security-report",
-      publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3),
-      rawText: "New police data shows declining crime levels...",
-      topics: ["safety"],
-      sentiment: 0.35,
-      entities: ["Security"]
-    },
-    {
-      country: "PT",
-      source: "Expresso.pt",
-      title: "Government announces tax reform",
-      url: "https://expresso.pt/tax-reform",
-      publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4),
-      rawText: "The government introduced changes to the tax system...",
-      topics: ["policy"],
-      sentiment: 0.10,
-      entities: ["Government", "Economy"]
-    },
+  const entityByName = new Map(
+    entityRecords.map((e) => [e.name, e])
+  );
 
-    // 🇸🇪 Sweden articles
-    {
-      country: "SE",
-      source: "SVT.se",
-      title: "Sweden strengthens environmental protections",
-      url: "https://svt.se/environment-protections",
-      publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1),
-      rawText: "New measures aim to reduce emissions...",
-      topics: ["climate"],
-      sentiment: 0.41,
-      entities: ["Environment"]
-    },
-    {
-      country: "SE",
-      source: "Aftonbladet.se",
-      title: "Economic uncertainty rises",
-      url: "https://aftonbladet.se/economic-uncertainty",
-      publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
-      rawText: "Analysts warn of slower growth...",
-      topics: ["economy"],
-      sentiment: -0.18,
-      entities: ["Economy"]
-    },
-    {
-      country: "SE",
-      source: "DN.se",
-      title: "Debate intensifies around security policies",
-      url: "https://dn.se/security-policy",
-      publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3),
-      rawText: "Lawmakers argue over new proposals...",
-      topics: ["policy", "safety"],
-      sentiment: -0.05,
-      entities: ["Government", "Security"]
-    },
-    {
-      country: "SE",
-      source: "SVT.se",
-      title: "Government reviews carbon tax structure",
-      url: "https://svt.se/carbon-tax-review",
-      publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4),
-      rawText: "Carbon tax changes under consideration...",
-      topics: ["climate", "policy"],
-      sentiment: 0.15,
-      entities: ["Environment", "Government"]
-    }
-  ];
+  const DAYS = 60;
 
-  for (const article of baseArticles) {
-    const a = await prisma.article.create({
-      data: {
-        source: article.source,
-        title: article.title,
-        url: article.url,
-        publishedAt: article.publishedAt,
-        rawText: article.rawText,
-        country: article.country
-      }
-    });
+  const now = new Date();
 
-    const analysis = await prisma.analysis.create({
-      data: {
-        articleId: a.id,
-        sentiment: article.sentiment,
-        topics: article.topics,
-        entities: article.entities
-      }
-    });
+  for (const country of COUNTRIES) {
+    for (let offset = 0; offset < DAYS; offset++) {
+      const date = new Date(
+        now.getTime() - offset * 24 * 60 * 60 * 1000
+      );
 
-    // Link entity occurrences
-    for (const entName of article.entities) {
-      const ent = entityRecords.find((e) => e.name === entName);
-      if (!ent) continue;
+      for (const topic of TOPICS) {
+        const sources = SOURCES[country];
+        const source =
+          sources[Math.floor(Math.random() * sources.length)];
 
-      await prisma.entityOccurrence.create({
-        data: {
-          entityId: ent.id,
-          analysisId: analysis.id,
-          count: 1
+        const title = `${topic.toUpperCase()} update in ${
+          country === "SE" ? "Sweden" : "Portugal"
+        } (${date.toISOString().slice(0, 10)})`;
+
+        const url = `https://example.com/${country.toLowerCase()}/${topic}/${date
+          .toISOString()
+          .slice(0, 10)}`;
+
+        const rawText = `Mock article about ${topic} in ${
+          country === "SE" ? "Sweden" : "Portugal"
+        } on ${date.toDateString()}.`;
+
+        const article = await prisma.article.create({
+          data: {
+            source,
+            title,
+            url,
+            publishedAt: date,
+            rawText,
+            country,
+          },
+        });
+
+        const sentiment = randomSentiment(topic);
+
+        const entityName = TOPIC_ENTITY[topic];
+        const entity = entityByName.get(entityName);
+
+        const analysis = await prisma.analysis.create({
+          data: {
+            articleId: article.id,
+            sentiment,
+            topics: [topic],
+            entities: entity ? [entity.name] : [],
+          },
+        });
+
+        if (entity) {
+          await prisma.entityOccurrence.create({
+            data: {
+              entityId: entity.id,
+              analysisId: analysis.id,
+              count: 1,
+            },
+          });
         }
-      });
+      }
     }
   }
 
-  console.log("🌱 Mock data inserted successfully.");
+  console.log("🌱 Expanded mock data inserted successfully.");
 }
 
 main()
-  .catch((e) => console.error(e))
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
   .finally(async () => {
     await prisma.$disconnect();
   });
