@@ -1,170 +1,111 @@
-# 🌍 Political Discourse Dashboard
-
-### AI-powered sentiment analysis of real-time news in Sweden & Portugal
-
-A full-stack TypeScript project that ingests news articles, performs ML-based sentiment analysis (Hugging Face), extracts entities, and visualizes trends across multiple political/societal topics — all updated automatically.
-
-This project demonstrates professional-grade full stack skills, including:
-
-• Full-stack architecture (React + Vite + Express + PostgreSQL)
-• Type safety end-to-end (TypeScript everywhere)
-• ML integration using Hugging Face Inference API
-• Real-time backend triggers using Server-Sent Events
-• Scheduled ingestion job (Node Cron + Railway)
-• Database modeling & querying with Prisma
-• Data visualization (Recharts)
-• CI-friendly, deploy-ready monorepo with pnpm workspaces
-• Cloud deployment on Vercel + Railway
-
-## 🚀 Live Demo
-👉 [https://political-discourse-news-web.vercel.app/](here)
-Frontend: Vercel
-Backend API: Railway
-
 📸 Screenshot
 ![Screenshot](./screenshot.png)
 
-✨ Features
-🔎 Multi-Topic Sentiment Tracking
+# 🌍 Political Discourse Dashboard
 
-Choose topics such as climate, economy, policy, and safety.
-View sentiment trends over: 
-• 1 week
-• 2 weeks
-• 3 weeks
-• 1 month
+A full-stack, ML-powered dashboard that analyzes news sentiment across Sweden and Portugal.
 
-🧠 ML-Powered Sentiment Analysis
-Uses Hugging Face's DistilBERT (SST-2) model to classify article tone:
+This project pulls real news articles, runs sentiment analysis using a Hugging Face model, stores insights in PostgreSQL, and visualizes trends in a clean React dashboard.
 
-• POSITIVE → normalized toward 1
-• NEGATIVE → normalized toward 0
+Built to demonstrate modern full-stack engineering, API design, cloud deployment, and real-world ML integration.
 
-Ensures smooth 0–1 sentiment scale across the dashboard.
+## 🚀 Live Demo
+[https://political-discourse-news-web.vercel.app/](here)
 
-## 📰 Automated News Ingestion
-Every hour, the backend:
+Frontend: Vercel
+Backend API: Railway
 
-1. Fetches the latest articles
-2. Cleans & stores them
-3. Runs sentiment analysis
-4. Extracts mentioned entities
-5. Aggregates & exposes insights via API
+## ✨ What This Project Shows
 
-Powered by:
+• Full-stack TypeScript (React, Express, Prisma)
+• Real ML integration using Hugging Face sentiment analysis
+• Automated data ingestion + scheduled jobs
+• Clean API design with Zod validation & Prisma ORM
+• Cloud deployment across Vercel (web) and Railway (API + DB)
+• Interactive data visualization with Recharts
+• Monorepo structure, pnpm workspaces, environment management
 
-• NewsAPI (as source)
-• Cron scheduler in Node
-• PostgreSQL on Railway
+This is the kind of system you would build in a real production setting: data ingestion, feature extraction, analysis, persistence, and presentation.
 
-## 📊 Interactive Dashboard
-Built with React + Recharts:
+## 🧠 Features
+### ML Sentiment Analysis
 
+Uses the Hugging Face model distilbert-base-uncased-finetuned-sst-2-english to classify article sentiment and map it to a 0–1 score for visualization.
+
+### Automated News Ingestion
+
+A cron job fetches articles hourly, analyzes them, and stores results.
+If NewsAPI rate limits, the system can use mock data.
+
+### Multi-Topic Trend Visualization
+
+Tracks sentiment for topics like climate, economy, policy, and safety across time ranges (1–4 weeks).
+Includes country switching (Sweden / Portugal).
+
+### Modern Dashboard
+
+• Responsive UI
 • Smooth sentiment curves
-• Real-time updates via SSE
-• Topic legend with color coding
-• Dynamic country switching (Sweden / Portugal)
-• Automatically adjusts to mobile screens
+• Topic color legend
+• Source contribution list
+• Hourly auto-updating badge
 
-## 🛠 Modern Full-Stack Setup
+## 🛠 Tech Stack
 
-• Monorepo with pnpm workspaces
-• API: Node + Express + Prisma
-• Frontend: React + Vite + TailwindCSS
-• Database: PostgreSQL (Railway)
-• ML API: Hugging Face inference
-• Deployment:
-    • Frontend → Vercel
-    • API → Railway
+Frontend: React, TypeScript, Vite, TailwindCSS, Recharts
+Backend: Node.js, Express, Prisma, PostgreSQL, Hugging Face API, node-cron
+Infra: Vercel (web), Railway (API + DB), pnpm monorepo
 
+## 🏗 Project Structure
 
-## 🏗 Architecture
+apps/
+  api/   → Express API + cron + ML pipeline
+  web/   → React dashboard
+packages/
+  config → shared TS/ESLint configs
 
-political-discourse-dashboard
-│
-├── apps/
-│   ├── api/          # Express API + Cron jobs + Prisma
-│   └── web/          # React frontend (Vite)
-│
-├── packages/
-│   └── config/       # Shared tsconfig & lint setup
-│
-└── prisma/           # DB models & migrations
+## 🔧 Environment Variables
+### API (apps/api/.env)
 
-## 🔧 Tech Stack
-### Frontend
+DATABASE_URL=your_postgres_url
+HF_API_KEY=your_huggingface_key
+NEWSAPI_KEY=your_newsapi_key
+ENABLE_INGESTION=true
 
-• React + TypeScript
-• Vite
-• Tailwind CSS
-• Recharts (visualization)
+### Frontend (apps/web/.env)
 
-### Backend
+VITE_API_BASE="https://your-api.up.railway.app"
 
-• Node.js + TypeScript
-• Express.js
-• Prisma ORM
-• Hugging Face Sentiment Model
-• node-cron
-• Server-Sent Events (real-time)
+## 💻 Running Locally
 
-### Infrastructure
-
-• Railway (API + PostgreSQL)
-• Vercel (Frontend)
-• pnpm monorepo
-• Environment variable–driven config
-
-## 🧪 Running Locally
-1. Install dependencies
+Install dependencies:
 pnpm install
 
-2. Set environment variables
-
-Create .env files:
-
-apps/api/.env
-DATABASE_URL="postgresql://..."
-NEWSAPI_KEY="..."
-HF_API_KEY="..."
-ENABLE_INGESTION=false   # Optional: enable cron ingestion
-
-apps/web/.env
-VITE_API_BASE="http://localhost:4000"
-
-3. Start both frontend + backend
+Start API + Web:
 pnpm dev
 
-## 🔄 Ingestion Job (Cron)
-
-Runs every hour:
-
-cron.schedule("5 * * * *", () => {
-  ingestFromNewsAPI(...)
-})
-
-
-Can be toggled with:
-
-ENABLE_INGESTION=true / false
+Seed mock data (optional):
+cd apps/api
+pnpm tsx prisma/seed_mock.ts
 
 ## 📦 Deployment
+### Railway (API)
 
-• Frontend deployed on Vercel
-• Backend deployed on Railway, with PostgreSQL
-• Mock data seeding is supported for demo mode
-• Supports HTTPS + CORS for production use
+• Deploy apps/api
+• Attach PostgreSQL
+• Add environment variables
+• Railway runs pnpm -C apps/api build then pnpm -C apps/api start
 
-## 🤝 Recruiter Notes (Why This Project Matters)
+### Vercel (Frontend)
 
-This repo demonstrates:
+• Deploy apps/web
+• Add VITE_API_BASE pointing to your Railway API domain
 
-• Real experience building a distributed, production-grade system
-• Integration of machine learning into a real product
-• Handling of scheduling, data pipelines, and API architecture
-• Clean, professional React UI with responsive design
-• Practical understanding of cloud deployment, DevOps, and environment config
-• Strong knowledge of TypeScript, Prisma, and modern frontend tooling
+## 👤 About This Project
 
-If you're evaluating this project:
-👉 It shows readiness for full-stack, backend, or ML-adjacent roles.
+This dashboard was built to demonstrate:
+• End-to-end system thinking
+• Practical use of ML in a real product
+• Production-style API development
+• Frontend engineering with modern tooling
+• Cloud-native deployment workflows
