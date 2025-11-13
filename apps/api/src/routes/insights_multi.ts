@@ -1,59 +1,87 @@
-import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { z } from 'zod';
+import { Router } from "express";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 const router = Router();
 
-router.get('/sentiment-multi', async (req, res) => {
-  const schema = z.object({
-    terms: z.string().default(''),
-    range: z.string().default('7d'),
-    country: z.enum(['SE','PT']).optional(),
-  });
+type Point = { date: string; avgSentiment: number };
+type Series = { term: string; points: Point[] };
 
-  const { terms, range, country } = schema.parse({
-    terms: req.query.terms ?? '',
-    range: req.query.range ?? '7d',
-    country: req.query.country,
-  });
+function parseRange(range?: string): { label: string; days: number } {
+  const r = range ?? "7d";
 
-  const termList = terms
-    .split(',')
-    .map(s => s.trim())
-    .filter(Boolean);
-
-  const m = range.match(/^(\d+)\s*d$/i);
-  const days = m ? Math.max(1, parseInt(m[1], 10)) : 7;
-  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-
-  const seriesFor = async (term: string) => {
-    const articles = await prisma.article.findMany({
-      where: {
-        publishedAt: { gte: since },
-        ...(term ? { title: { contains: term, mode: 'insensitive' } } : {}),
-        ...(country ? { country } : {}),
-      },
-      include: { analyses: true },
-    });
-    const byDay: Record<string, number[]> = {};
-    for (const a of articles) {
-      if (!a.analyses.length) continue;
-      const day = a.publishedAt.toISOString().slice(0, 10);
-      byDay[day] ||= [];
-      for (const an of a.analyses) byDay[day].push(an.sentiment);
-    }
-    const points = Object.entries(byDay)
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([date, vals]) => ({
-        date,
-        avgSentiment: vals.reduce((s, x) => s + x, 0) / vals.length,
-      }));
-    return { term, points };
+  if (r.endsWith("d")) {
+    const n = Number(r.slice(1, -1));
+    return { label: r, days: Number.isFinite(n) && n > 0 ? n : 7 };
   }
 
-  const data = await Promise.all(termList.map(seriesFor));
-  res.json({ range: `${days}d`, series: data });
+  if (r.endsWith("w")) {
+    const n = Number(r.slice(0, -1));
+    return { label: r, days: (Number.isFinite(n) && n > 0 ? n : 1) * 7 };
+  }
+
+  if (r.endsWith("m")) {
+    const n = Number(r.slice(0, -1));
+    return { label: r, days: (Number.isFinite(n) && n > 0 ? n : 1) * 30 };
+  }
+
+  return { label: "7d", days: 7 };
+}
+
+router.get("/insights/sentiment-multi", async (req, res, next) => {
+  try {
+    const termsParam = (req.query.terms as string | undefined) ?? "";
+    const terms = (termsParam || "climate,economy,policy,safety")
+      .split(",")
+      .map((t) => t.trim().toLowerCase())
+      .filter(Boolean);
+
+    const country = (req.query.country as "SE" | "PT" | undefined) ?? "SE";
+    const { label, days } = parseRange(req.query.range as string | undefined);
+
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+
+    const series: Series[] = [];
+
+    for (const term of terms) {
+      const analyses = await prisma.analysis.findMany({
+        where: {
+          topics: { has: term },
+          Article: {
+            country,
+            publishedAt: { gte: since },
+          },
+        },
+        include: { Article: true },
+        orderBy: { Article: { publishedAt: "asc" } },
+      });
+
+      const byDate = new Map<string, { sum: number; count: number }>();
+
+      for (const a of analyses) {
+        const d = a.Article?.publishedAt.toISOString().slice(0, 10);
+        if (!d) continue;
+        const e = byDate.get(d) ?? { sum: 0, count: 0 };
+        e.sum += a.sentiment;
+        e.count += 1;
+        byDate.set(d, e);
+      }
+
+      const points: Point[] = Array.from(byDate.entries())
+        .map(([date, { sum, count }]) => ({
+          date,
+          avgSentiment: count ? sum / count : 0,
+        }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+      series.push({ term, points });
+    }
+
+    res.json({ range: label, series });
+  } catch (err) {
+    next(err);
+  }
 });
 
 export default router;

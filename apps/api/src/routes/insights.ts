@@ -1,60 +1,97 @@
-import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { z } from 'zod';
+import { Router } from "express";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 const router = Router();
 
-router.get('/sentiment', async (req, res) => {
-  const schema = z.object({
-    term: z.string().default(''),
-    bucket: z.enum(['day']).default('day'),
-    range: z.string().default('7d'),
-    country: z.enum(['SE','PT']).optional(),
-  });
+type Point = {
+  date: string;
+  avgSentiment: number;
+  sources: { source: string; count: number }[];
+};
 
-  const { term, range, country } = schema.parse({
-    term: req.query.term ?? '',
-    range: req.query.range ?? '7d',
-    country: req.query.country,
-  });
+function parseRange(range?: string): { label: string; days: number } {
+  const r = range ?? "7d";
 
-  const m = range.match(/^(\d+)\s*d$/i);
-  const days = m ? Math.max(1, parseInt(m[1], 10)) : 7;
-  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-
-  const articles = await prisma.article.findMany({
-    where: {
-      publishedAt: { gte: since },
-      ...(term ? { title: { contains: term, mode: 'insensitive' } } : {}),
-      ...(country ? { country } : {}),
-    },
-    include: { analyses: true },
-  });
-
-  const byDay: Record<string, { sentiments: number[]; sources: Record<string, number> }> = {};
-
-  for (const a of articles) {
-    if (!a.analyses.length) continue;
-    const day = a.publishedAt.toISOString().slice(0, 10);
-    byDay[day] ||= { sentiments: [], sources: {} };
-    for (const an of a.analyses) {
-      byDay[day].sentiments.push(an.sentiment);
-    }
-    byDay[day].sources[a.source] = (byDay[day].sources[a.source] || 0) + 1;
+  if (r.endsWith("d")) {
+    const n = Number(r.slice(0, -1));
+    return { label: r, days: Number.isFinite(n) && n > 0 ? n : 7 };
   }
 
-  const points = Object.entries(byDay)
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([date, v]) => ({
-      date,
-      avgSentiment: v.sentiments.reduce((s, x) => s + x, 0) / v.sentiments.length,
-      sources: Object.entries(v.sources)
-        .map(([source, count]) => ({ source, count }))
-        .sort((a, b) => b.count - a.count),
-    }));
+  if (r.endsWith("w")) {
+    const n = Number(r.slice(0, -1));
+    return { label: r, days: (Number.isFinite(n) && n > 0 ? n : 1) * 7 };
+  }
 
-  res.json({ term, range: `${days}d`, points });
+  if (r.endsWith("m")) {
+    const n = Number(r.slice(0, -1));
+    return { label: r, days: (Number.isFinite(n) && n > 0 ? n : 1) * 30 };
+  }
+
+  return { label: "7d", days: 7 };
+}
+
+router.get("/insights/sentiment", async (req, res, next) => {
+  try {
+    const term = ((req.query.term as string | undefined) ?? "climate")
+      .trim()
+      .toLowerCase();
+
+    const country = (req.query.country as "SE" | "PT" | undefined) ?? "SE";
+    const { label, days } = parseRange(req.query.range as string | undefined);
+
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+
+    const analyses = await prisma.analysis.findMany({
+      where: {
+        topics: { has: term },
+        Article: {
+          country,
+          publishedAt: { gte: since },
+        },
+      },
+      include: { Article: true },
+      orderBy: { Article: { publishedAt: "asc" } },
+    });
+
+    const byDate = new Map<
+      string,
+      { sum: number; count: number; sources: Map<string, number> }
+    >();
+
+    for (const a of analyses) {
+      const art = a.Article;
+      if (!art) continue;
+      const day = art.publishedAt.toISOString().slice(0, 10);
+
+      let bucket = byDate.get(day);
+      if (!bucket) {
+        bucket = { sum: 0, count: 0, sources: new Map() };
+        byDate.set(day, bucket);
+      }
+
+      bucket.sum += a.sentiment;
+      bucket.count += 1;
+      const sName = art.source;
+      bucket.sources.set(sName, (bucket.sources.get(sName) ?? 0) + 1);
+    }
+
+    const points: Point[] = Array.from(byDate.entries())
+      .map(([date, b]) => ({
+        date,
+        avgSentiment: b.count ? b.sum / b.count : 0,
+        sources: Array.from(b.sources.entries()).map(([source, count]) => ({
+          source,
+          count,
+        })),
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    res.json({ term, range: label, points });
+  } catch (err) {
+    next(err);
+  }
 });
 
 export default router;
