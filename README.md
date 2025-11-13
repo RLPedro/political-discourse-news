@@ -65,19 +65,21 @@ Vercel (web), Railway (API + DB), pnpm monorepo
 ## Environment Variables
 
 ### API (`apps/api/.env`)
+```env
 DATABASE_URL=your_postgres_url
 HF_API_KEY=your_huggingface_key
 NEWSAPI_KEY=your_newsapi_key
 ENABLE_INGESTION=true
-text### Frontend (`apps/web/.env`)
-VITE_API_BASE="https://your-api.up.railway.app"
-text## Running Locally
+Frontend (apps/web/.env)
+envVITE_API_BASE="https://your-api.up.railway.app"
+
+## Running Locally
 pnpm install
 pnpm dev
 textOptional mock data:
 cd apps/api
 pnpm tsx prisma/seed_mock.ts
-text## Deployment
+## Deployment
 
 ### Railway (API)
 - Deploy `apps/api`
