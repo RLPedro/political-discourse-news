@@ -15,7 +15,7 @@ Built to demonstrate modern full-stack engineering, API design, cloud deployment
 👉 [here](https://political-discourse-news-web.vercel.app/)
 
 - **Frontend**: Vercel  
-- **Backend API**: Railway
+- **Backend API + Postgres database**: Railway
 
 ---
 
