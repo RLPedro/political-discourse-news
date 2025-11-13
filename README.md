@@ -70,15 +70,20 @@ DATABASE_URL=your_postgres_url
 HF_API_KEY=your_huggingface_key
 NEWSAPI_KEY=your_newsapi_key
 ENABLE_INGESTION=true
-Frontend (apps/web/.env)
+```
+
+### Frontend (`apps/web/.env`)
 envVITE_API_BASE="https://your-api.up.railway.app"
 
 ## Running Locally
+```env
 pnpm install
 pnpm dev
 textOptional mock data:
 cd apps/api
 pnpm tsx prisma/seed_mock.ts
+```
+
 ## Deployment
 
 ### Railway (API)
