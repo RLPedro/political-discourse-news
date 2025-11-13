@@ -133,55 +133,124 @@ const App = () => {
   };
 
   return (
-    <div className="container py-10 space-y-6">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Analysis on publicly available news</h1>
-          <div className="flex items-center gap-3">
-            <label className="text-sm text-gray-600 dark:text-gray-300">Range</label>
-            <select className="input !w-auto" value={range} onChange={(e) => setRangeParam(e.target.value)}>
+  <div className="min-h-screen bg-slate-950 text-slate-50">
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:py-8 sm:px-6 lg:px-8 space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-2">
+          <h1 className="text-xl font-semibold sm:text-2xl">
+            Analysis on publicly available news
+          </h1>
+
+          <div className="flex flex-wrap items-center gap-3 text-sm text-gray-300">
+            <div className="flex items-center gap-2">
+              <span className="text-xs uppercase tracking-wide text-gray-400">
+                Range
+              </span>
+              <select
+                className="input !w-auto !py-1 !px-2 text-xs sm:text-sm"
+                value={range}
+                onChange={(e) => setRangeParam(e.target.value)}
+              >
               {rangeOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-            </select>
+              </select>
+            </div>
+
+            <span className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-medium bg-green-500/10 text-green-200">
+              <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
+              Auto-updating when new articles arrive
+            </span>
+
+            {lastUpdatedText && (
+              <span className="text-xs text-gray-400">
+                Updated {lastUpdatedText}
+              </span>
+            )}
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="rounded-full px-3 py-1 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200">
-            Auto-updating hourly
+
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs uppercase tracking-wide text-gray-400">
+            Country
           </span>
-          {lastUpdatedText && <span className="text-xs text-gray-500">Updated {lastUpdatedText}</span>}
-          <button onClick={() => setCountryParam('SE')} className={`btn ${ (sp.get('country') ?? 'SE') === 'SE' ? '' : 'opacity-70'}`}>Sweden</button>
-          <button onClick={() => setCountryParam('PT')} className={`btn ${ (sp.get('country') ?? 'SE') === 'PT' ? '' : 'opacity-70'}`}>Portugal</button>
+          <div className="inline-flex rounded-full bg-slate-800/70 p-1">
+            <button
+              onClick={() => setCountryParam("SE")}
+              className={`px-3 py-1 text-xs sm:text-sm rounded-full transition ${
+                country === "SE"
+                  ? "bg-slate-100 text-slate-900 font-semibold"
+                  : "text-gray-300 hover:bg-slate-700/80"
+              }`}
+            >
+              Sweden
+            </button>
+            <button
+              onClick={() => setCountryParam("PT")}
+              className={`px-3 py-1 text-xs sm:text-sm rounded-full transition ${
+                country === "PT"
+                  ? "bg-slate-100 text-slate-900 font-semibold"
+                  : "text-gray-300 hover:bg-slate-700/80"
+              }`}
+            >
+              Portugal
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="card lg:col-span-3 space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="text-lg font-semibold">Sentiment over time</h4>
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-4 lg:items-start">
+        <div className="card lg:col-span-3 space-y-4 bg-slate-900/70 border border-slate-800">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <h4 className="text-base sm:text-lg font-semibold">
+              Sentiment over time
+            </h4>
+            <div className="flex w-full sm:w-auto items-center gap-3 overflow-x-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent py-1 -mx-1 px-1">
+              {topics.map((name, i) => (
+                <div key={name} className="inline-flex items-center gap-2">
+                  <span
+                    className="inline-block h-2 w-2 rounded-full flex-shrink-0"
+                    style={{
+                      background: COLORS[i % COLORS.length],
+                      opacity: empty.has(name) ? 0.3 : 1,
+                    }}
+                  />
+                  <span className="text-xs sm:text-sm whitespace-nowrap">
+                    {name}
+                    {empty.has(name) && (
+                      <span className="ml-1 text-[11px] text-gray-400">
+                        (no data)
+                      </span>
+                    )}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            {topics.map((name, i) => (
-              <div key={name} className="flex items-center gap-2">
-                <span className="inline-block w-3 h-3 rounded-full" style={{ background: COLORS[i % COLORS.length], opacity: empty.has(name) ? 0.3 : 1 }} />
-                <span className="text-sm">
-                  {name}{empty.has(name) && <span className="ml-1 text-xs text-gray-500">(no data)</span>}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <div className="h-80">
+          <div className="h-64 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" tick={{ fill: '#e5e7eb' }} />
-                <YAxis domain={[0, 1]} tick={{ fill: '#e5e7eb' }} />
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fill: "#e5e7eb", fontSize: 10 }}
+                  tickMargin={8}
+                />
+                <YAxis
+                  domain={[0, 1]}
+                  tick={{ fill: "#e5e7eb", fontSize: 10 }}
+                />
                 <Tooltip
-                  labelStyle={{ color: '#111827', fontWeight: 600 }}
-                  contentStyle={{ background: '#ffffff', borderColor: '#e5e7eb' }}
-                  itemStyle={{ color: '#111827' }}
-                  formatter={(value: any, name: string) => [Number(value).toFixed(3), name]}
+                  labelStyle={{ color: "#0f172a", fontWeight: 600 }}
+                  contentStyle={{
+                    background: "#ffffff",
+                    borderColor: "#e5e7eb",
+                    borderRadius: 8,
+                  }}
+                  itemStyle={{ color: "#0f172a", fontSize: 12 }}
+                  formatter={(value: any, name: string) => [
+                    Number(value).toFixed(3),
+                    name,
+                  ]}
                 />
                 {topics.map((name, i) => (
                   <Line
@@ -200,24 +269,42 @@ const App = () => {
             </ResponsiveContainer>
           </div>
 
-          <p className="text-sm text-gray-500">Overlay shows daily average sentiment for each topic.</p>
+          <p className="text-xs sm:text-sm text-gray-400">
+            Each line shows the daily average sentiment for a topic (0 = most
+            negative, 1 = most positive).
+          </p>
         </div>
 
-        <div className="card space-y-3">
-          <h3 className="text-lg font-semibold">Sources — {(sp.get('country') ?? 'SE') === 'SE' ? 'Sweden' : 'Portugal'}</h3>
-          <ul className="text-sm space-y-2 max-h-80 overflow-auto pr-2">
-            {sources.slice(0, 50).map(s => (
-              <li key={s.source} className="flex justify-between gap-3">
-                <span className="truncate">{s.source}</span>
-                <span className="tabular-nums text-gray-500">{s.count}</span>
+        <div className="card space-y-3 bg-slate-900/70 border border-slate-800">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm sm:text-base font-semibold">
+              Sources — {country === "SE" ? "Sweden" : "Portugal"}
+            </h3>
+          </div>
+          <ul className="mt-1 space-y-1.5 max-h-64 sm:max-h-80 overflow-auto pr-1 text-xs sm:text-sm">
+            {sources.slice(0, 60).map((s) => (
+              <li
+                key={s.source}
+                className="flex justify-between items-center gap-3 border-b border-slate-800/60 pb-1.5 last:border-b-0 last:pb-0"
+              >
+                <span className="truncate text-gray-100">{s.source}</span>
+                <span className="tabular-nums text-gray-400 text-xs">
+                  {s.count}
+                </span>
               </li>
             ))}
-            {sources.length === 0 && <li className="text-gray-500">No sources yet for this range.</li>}
+            {sources.length === 0 && (
+              <li className="text-gray-500 text-xs">
+                No sources yet for this range.
+              </li>
+            )}
           </ul>
         </div>
       </div>
     </div>
-  );
+  </div>
+);
+
 }
 
 export default App;
