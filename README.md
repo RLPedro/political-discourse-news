@@ -73,7 +73,9 @@ ENABLE_INGESTION=true
 ```
 
 ### Frontend (`apps/web/.env`)
-envVITE_API_BASE="https://your-api.up.railway.app"
+```env
+VITE_API_BASE="https://your-api.up.railway.app"
+```
 
 ## Running Locally
 ```env
@@ -91,9 +93,12 @@ pnpm tsx prisma/seed_mock.ts
 - Attach PostgreSQL
 - Add env vars
 - Runs:
+```env
 pnpm -C apps/api build
 pnpm -C apps/api start
-text### Vercel (Frontend)
+```
+
+### Vercel (Frontend)
 - Deploy `apps/web`
 - Set `VITE_API_BASE` to Railway URL
 
