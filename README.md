@@ -12,7 +12,7 @@ Built to demonstrate modern full‑stack engineering, API design, cloud deployme
 https://political-discourse-news-web.vercel.app/
 
 - **Frontend**: Vercel  
-- **Backend API**: Railway
+- **Backend API** (API and database): Railway
 
 ## What This Project Shows
 - Full‑stack TypeScript (React, Express, Prisma)
