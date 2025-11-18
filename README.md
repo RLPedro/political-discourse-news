@@ -1,4 +1,3 @@
-Screenshot  
 ![Screenshot](./screenshot.png)
 
 # Political Discourse Dashboard
