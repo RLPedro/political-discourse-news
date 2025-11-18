@@ -9,7 +9,7 @@ This project pulls real news articles, runs sentiment analysis with a Hugging Fa
 Built to demonstrate modern full‑stack engineering, API design, cloud deployment, and real‑world ML integration.
 
 ## Live Demo
-https://political-discourse-news-web.vercel.app/
+Check it out 👉 [here](https://political-discourse-news-web.vercel.app//)
 
 - **Frontend**: Vercel  
 - **Backend API** (API and database): Railway
