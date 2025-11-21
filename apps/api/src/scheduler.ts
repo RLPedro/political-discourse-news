@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import { ingestNews } from './services/ingestion.js';
+import { ingestFromNewsAPIWithEntities } from './services/ingestion_with_entities.js';
 
 const TERMS = (process.env.INGEST_TERMS || 'climate,economy,policy,safety')
   .split(',')
@@ -8,7 +8,7 @@ const TERMS = (process.env.INGEST_TERMS || 'climate,economy,policy,safety')
 
 const COUNTRIES = ((process.env.INGEST_COUNTRIES || 'SE,PT')
   .split(',')
-  .map(s => s.trim().toUpperCase()) as ('SE'|'PT')[]);
+  .map(s => s.trim().toUpperCase()) as ('SE' | 'PT')[]);
 
 const DAYS = Number(process.env.INGEST_DAYS || 2);
 const PAGE = Number(process.env.INGEST_PAGE_SIZE || 50);
@@ -21,7 +21,7 @@ export const startScheduler = () => {
     for (const country of COUNTRIES) {
       for (const term of TERMS) {
         try {
-          const res = await ingestNews({
+          const res = await ingestFromNewsAPIWithEntities({
             term,
             days: DAYS,
             pageSize: PAGE,

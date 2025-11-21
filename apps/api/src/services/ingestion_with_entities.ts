@@ -107,15 +107,6 @@ export const ingestFromNewsAPIWithEntities = async (opts: IngestOptions) => {
       });
 
       const s = await sentiment01([a.title, a.description].filter(Boolean).join(' — '));
-      await prisma.analysis.create({
-        data: {
-          articleId: article.id,
-          sentiment: s,
-          topics: [term.toLowerCase()],
-          entities: {},
-        },
-      });
-
       const analysis = await prisma.analysis.create({
         data: {
           articleId: article.id,
@@ -124,6 +115,8 @@ export const ingestFromNewsAPIWithEntities = async (opts: IngestOptions) => {
           entities: {},
         },
       });
+
+
 
       const ents = extractEntities([a.title, content].filter(Boolean).join(' '), 25);
       for (const ent of ents) {
